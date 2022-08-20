@@ -15,3 +15,9 @@ def print_banner():
 *  https://github.com/Tus1688/web-uncover  *
 ============================================
     """ + bgcolors.ENDC)
+
+def print_info(info):
+    print(bgcolors.OKGREEN + "[*] INFO: " + bgcolors.ENDC + info)
+
+def print_error(error):
+    print(bgcolors.FAIL + "[-] Error: " + bgcolors.ENDC + error)
