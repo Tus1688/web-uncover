@@ -4,6 +4,7 @@ import sys
 import requests
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.by import By
 
 from ui import print_error, print_info
 from browser import custom_profile
@@ -14,7 +15,7 @@ def engine(url, depth, threads, output, user_agent, proxy, cookie):
     try:
         print_info('Url is valid')
         req_headless_browser(url=url, proxy="127.0.0.1:8080")
-        #req_python_request(url=url,proxy="https://127.0.0.1:8080")
+        #req_python_request(url=url,proxy="127.0.0.1:8080")
     except Exception as e:
         print_error(str(e))
         sys.exit(1)
@@ -24,22 +25,38 @@ def req_headless_browser(url, cookie = None, proxy = None):
 
     options = Options()
     options.headless = True
+    options.profile = custom_profile(proxy, getUserAgent(False))
 
-    driver = webdriver.Firefox(executable_path='geckodriver',options=options, firefox_profile=custom_profile(proxy, getUserAgent(False)))
+    driver = webdriver.Firefox(executable_path='geckodriver',options=options)
     driver.get(url)
 
     html_result = driver.page_source
-    print(html_result)
+    #print(html_result)
+
+    elements = driver.find_elements(By.TAG_NAME, 'a')
+    for e in elements:
+        print(e.get_attribute('href'))
+
     initial_cookie = driver.get_cookies()
 
     driver.quit()
 
     for cookie in initial_cookie:
         print(cookie)
+    
 
 def req_python_request(url, cookie= None, proxy = None):
-    headers = {'Accept': '*/*', 'User-Agent': getUserAgent(True)}
-    r = requests.get(url=url, headers=headers, proxies={'http': proxy, 'https': proxy},verify=False)
+    # headers accept language
+
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
+        'User-Agent': getUserAgent(True)
+        }
+    destruct_proxy = {'http': f'http://{proxy}', 'https': f'https://{proxy}'} if proxy else {}
+
+    r = requests.get(url=url, headers=headers, proxies=destruct_proxy,verify=False)
     # get cookies from response
     initial_cookie = r.cookies.get_dict()
     for cookie in initial_cookie:

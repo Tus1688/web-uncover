@@ -1,9 +1,9 @@
-from selenium import webdriver
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from ui import print_info
 
-def custom_profile(proxy:str = None, user_agent:str = None) -> webdriver.FirefoxProfile:
-    profile = webdriver.FirefoxProfile()
+def custom_profile(proxy:str = None, user_agent:str = None) -> FirefoxProfile:
+    profile = FirefoxProfile()
     
     profile.set_preference('dom.webdriver.enabled', False)
     profile.set_preference('useAutomationExtension', False)
@@ -12,6 +12,8 @@ def custom_profile(proxy:str = None, user_agent:str = None) -> webdriver.Firefox
     profile.set_preference('browser.startup.page', 0)
     profile.set_preference('browser.startup.homepage', 'about:blank')
     profile.set_preference('browser.newtab.preload', False)
+    profile.set_preference('browser.newtabpage.enabled', False)
+    profile.set_preference('browser.search.suggest.enabled', False)
     
     # newtab page
     profile.set_preference('browser.newtabpage.activity-stream.feeds.telemetry', False)
@@ -23,6 +25,9 @@ def custom_profile(proxy:str = None, user_agent:str = None) -> webdriver.Firefox
     profile.set_preference('browser.newtabpage.activity-stream.feeds.discoverystreamfeed', False)
     profile.set_preference('browser.newtabpage.activity-stream.showSponsoredTopSites', False)
     profile.set_preference('browser.newtabpage.activity-stream.default.sites', "")
+
+    profile.set_preference('browser.uitour.enabled', False)
+    profile.set_preference('browser.uitour.url', '')
 
     # disable geolocation
     profile.set_preference('geo.provider.ms-windows-location', False)
@@ -66,6 +71,9 @@ def custom_profile(proxy:str = None, user_agent:str = None) -> webdriver.Firefox
     profile.set_preference('captivedetect.canonicalURL', '')
     profile.set_preference('network.captive-portal-service.enabled', False)
     profile.set_preference('network.connectivity-service.enabled', False)
+    profile.set_preference('network.gio.supported-protocols', '')
+    profile.set_preference('permissions.manager.defaultsUrl', '')
+    profile.set_preference('webchannel.allowObject.urlWhitelist', '')
 
     # block implicit outbound
     profile.set_preference('network.prefetch-next', False)
@@ -78,6 +86,8 @@ def custom_profile(proxy:str = None, user_agent:str = None) -> webdriver.Firefox
 
     profile.set_preference('accessibility.force_disabled', 1)
     profile.set_preference('beacon.enabled', False)
+    profile.set_preference('breakpad.reportURL', '')
+
 
     # disable cache
     profile.set_preference('browser.cache.disk.enable', False)
@@ -99,6 +109,8 @@ def custom_profile(proxy:str = None, user_agent:str = None) -> webdriver.Firefox
     profile.set_preference('browser.newtabpage.activity-stream.feeds.favicon', False)
     profile.set_preference('browser.tabs.loadBookmarksInBackground', False)
     profile.set_preference('browser.newtabpage.activity-stream.section.highlights.includeBookmarks', False)
+
+
 
     # check if proxy is set
     if proxy:
