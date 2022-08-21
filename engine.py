@@ -29,7 +29,7 @@ def req_headless_browser(url, cookie = None, proxy = None):
     driver.get(url)
 
     html_result = driver.page_source
-    #print(html_result)
+    print(html_result)
     initial_cookie = driver.get_cookies()
 
     driver.quit()
