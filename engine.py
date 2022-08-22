@@ -6,14 +6,8 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 
-from ui import print_error, print_info, print_result_incope, print_result_outscope
+from ui import *
 from browser import custom_profile
-
-initial_cookie = [{}] # cookie from first request / provided by user
-# inscope uri 
-final_uri = [] # already crawled
-queue = [] # get uri from previously crawled uri and will be used for next request
-
 
 def engine(url, depth, threads, output, user_agent, proxy, cookie):
     try:
@@ -25,35 +19,59 @@ def engine(url, depth, threads, output, user_agent, proxy, cookie):
         sys.exit(1)
 
 def req_headless_browser(url, cookie = None, proxy = None):
+    result = [] # already crawled
+    queue = [] # get uri from previously crawled uri and will be used for next request
+    trash = [] # out of scope uri
     print_info(f'GET: {url} using headless browser')
+    queue.append(url if url.endswith('/') else url + '/')
+    comparer = url if url.endswith('/') else url + '/'
 
     options = Options()
     options.headless = True
     options.profile = custom_profile(proxy)
 
     driver = webdriver.Firefox(executable_path='geckodriver',options=options)
-    driver.get(url)
 
-    final_uri.append(url)
+    # make a recursion to crawl all uri in queue
+    while queue:
+        url = queue.pop(0)
+        # if url is not html page, skip it
+        if url.endswith('.md'):
+            result.append(url) # add url to result
+            continue
+        print_get_request(url)
 
-    elements = driver.find_elements(by=By.TAG_NAME, value="*")
-    for e in elements:
-        temp = e.get_attribute('href')
-        url_length = len(url)
-        if (temp is not None):
-            if 'redirect?to=' in temp:
-                temp = temp.split('redirect?to=')[1]
+        driver.get(url)
+        driver.refresh() # prevent crash
+        result.append(url) # add url to result
+        
+        elements = driver.find_elements(By.TAG_NAME, 'a') # get all elemets from current page
 
-            if (temp[0:url_length] == url):
-                if temp not in final_uri:
-                    queue.append(temp)
-                    print_result_incope(temp)
-            else:
-                print_result_outscope(temp)
+        for e in elements:
+            temp = e.get_attribute('href') # get href attribute from element
+            if (temp is not None): 
+                if 'redirect?to=' in temp: # if url is redirect, get redirect url
+                    temp = temp.split('redirect?to=')[1]
 
+                if (temp[0:len(comparer)] == comparer): # in scope base url
+                    if (temp not in result and temp not in queue):
+                        queue.append(temp)
+                        print_result_inscope(temp)
+                else: # out of scope 
+                    if temp not in result and temp not in queue:
+                        if temp not in trash: # prevent double print
+                            trash.append(temp)
+                            print_result_outscope(temp)
 
-    initial_cookie = driver.get_cookies()
     driver.quit()
+    print_info('Done\n')
+
+    for i in result:
+        print_result_inscope(i)
+    print('\n')
+    for i in trash:
+        print_result_outscope(i)
+
 
 
 def req_python_request(url, cookie= None, proxy = None):
