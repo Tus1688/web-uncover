@@ -6,16 +6,20 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 
-from ui import print_error, print_info
+from ui import print_error, print_info, print_result_incope, print_result_outscope
 from browser import custom_profile
 
 initial_cookie = [{}] # cookie from first request / provided by user
+# inscope uri 
+final_uri = [] # already crawled
+queue = [] # get uri from previously crawled uri and will be used for next request
+
 
 def engine(url, depth, threads, output, user_agent, proxy, cookie):
     try:
         print_info('Url is valid')
-        req_headless_browser(url=url, proxy="127.0.0.1:8080")
-        #req_python_request(url=url,proxy="127.0.0.1:8080")
+        req_headless_browser(url=url)
+
     except Exception as e:
         print_error(str(e))
         sys.exit(1)
@@ -25,29 +29,34 @@ def req_headless_browser(url, cookie = None, proxy = None):
 
     options = Options()
     options.headless = True
-    options.profile = custom_profile(proxy, getUserAgent(False))
+    options.profile = custom_profile(proxy)
 
     driver = webdriver.Firefox(executable_path='geckodriver',options=options)
     driver.get(url)
 
-    html_result = driver.page_source
-    #print(html_result)
+    final_uri.append(url)
 
-    elements = driver.find_elements(By.TAG_NAME, 'a')
+    elements = driver.find_elements(by=By.TAG_NAME, value="*")
     for e in elements:
-        print(e.get_attribute('href'))
+        temp = e.get_attribute('href')
+        url_length = len(url)
+        if (temp is not None):
+            if 'redirect?to=' in temp:
+                temp = temp.split('redirect?to=')[1]
+
+            if (temp[0:url_length] == url):
+                if temp not in final_uri:
+                    queue.append(temp)
+                    print_result_incope(temp)
+            else:
+                print_result_outscope(temp)
+
 
     initial_cookie = driver.get_cookies()
-
     driver.quit()
 
-    for cookie in initial_cookie:
-        print(cookie)
-    
 
 def req_python_request(url, cookie= None, proxy = None):
-    # headers accept language
-
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',

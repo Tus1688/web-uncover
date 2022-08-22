@@ -21,3 +21,9 @@ def print_info(info):
 
 def print_error(error):
     print(bgcolors.FAIL + "[-] Error: " + bgcolors.ENDC + error)
+
+def print_result_incope(value):
+    print("["+ bgcolors.OKGREEN + "*" + bgcolors.ENDC + "] IN SCOPE: " + value)
+
+def print_result_outscope(value):
+    print("["+ bgcolors.FAIL + "-" + bgcolors.ENDC + "] OUT OF SCOPE: " + value)
