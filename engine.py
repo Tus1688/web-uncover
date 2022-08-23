@@ -12,7 +12,7 @@ from browser import custom_profile
 def engine(url, depth, threads, output, user_agent, proxy, cookie):
     try:
         print_info('Url is valid')
-        req_headless_browser(url=url)
+        req_headless_browser(url=url, proxy=proxy)
 
     except Exception as e:
         print_error(str(e))
@@ -35,14 +35,21 @@ def req_headless_browser(url, cookie = None, proxy = None):
     # make a recursion to crawl all uri in queue
     while queue:
         url = queue.pop(0)
-        # if url is not html page, skip it
-        if url.endswith('.md'):
+        if url.endswith('.md'): # .md tends to break the crawler
             result.append(url) # add url to result
             continue
-        print_get_request(url)
 
-        driver.get(url)
-        driver.refresh() # prevent crash
+        # try to get if get error try refresh and get again
+        try:
+            print_get_request(url)
+            driver.refresh()
+            driver.get(url)
+        except Exception as e:
+            print_info("retrying to get url " + url)
+            driver.refresh()
+            driver.get(url)
+            pass
+
         result.append(url) # add url to result
         
         elements = driver.find_elements(By.TAG_NAME, 'a') # get all elemets from current page
