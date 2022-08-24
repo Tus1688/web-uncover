@@ -10,7 +10,7 @@ def menu():
     ap = argparse.ArgumentParser("python3 web-uncover.py")
     ap.add_argument("-u", "--url", required=True, help="url to enumerate")
     ap.add_argument("-d", "--depth", help="depth to enumerate", default=1)
-    ap.add_argument("-t", "--threads", help="threads to use", default=10)
+    ap.add_argument("-t", "--threads", help="threads to use", default=1)
     ap.add_argument("-o", "--output", help="output file")
     ap.add_argument("-ua", "--user-agent", help="user agent to use")
     ap.add_argument("-p", "--proxy", help="proxy to use")

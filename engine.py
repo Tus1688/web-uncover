@@ -12,16 +12,17 @@ from browser import custom_profile
 def engine(url, depth, threads, output, user_agent, proxy, cookie):
     try:
         print_info('Url is valid')
-        req_headless_browser(url=url, proxy=proxy)
+        req_headless_browser(url=url, proxy=proxy, depth=int(depth))
 
     except Exception as e:
         print_error(str(e))
         sys.exit(1)
 
-def req_headless_browser(url, cookie = None, proxy = None):
+def req_headless_browser(url, cookie = None, proxy = None, depth:int = 1):
     result = [] # already crawled
     queue = [] # get uri from previously crawled uri and will be used for next request
     trash = [] # out of scope uri
+    depth_to_crawl = 3 + depth # depth of crawling
     print_info(f'GET: {url} using headless browser')
     queue.append(url if url.endswith('/') else url + '/')
     comparer = url if url.endswith('/') else url + '/'
@@ -35,20 +36,22 @@ def req_headless_browser(url, cookie = None, proxy = None):
     # make a recursion to crawl all uri in queue
     while queue:
         url = queue.pop(0)
-        if url.endswith('.md'): # .md tends to break the crawler
+        # count slash in url if there is # or . in url then - the count of slash by the count of # and .
+        count_slash = url.count('/') if '#' not in url else url.count('/') - url.count('#')
+
+        if url.endswith('.md') or url.endswith('.txt'): 
             result.append(url) # add url to result
             continue
 
-        # try to get if get error try refresh and get again
-        try:
-            print_get_request(url)
-            driver.refresh()
-            driver.get(url)
-        except Exception as e:
-            print_info("retrying to get url " + url)
-            driver.refresh()
-            driver.get(url)
-            pass
+        if count_slash == depth_to_crawl:
+            # add everything in queue to result
+            result.extend(queue)
+            break
+
+        print_get_request(url)
+        driver.refresh()
+        driver.get(url)
+        driver.refresh()
 
         result.append(url) # add url to result
         
