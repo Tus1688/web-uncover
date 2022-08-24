@@ -36,8 +36,9 @@ def req_headless_browser(url, cookie = None, proxy = None, depth:int = 1):
     # make a recursion to crawl all uri in queue
     while queue:
         url = queue.pop(0)
-        # count slash in url if there is # or . in url then - the count of slash by the count of # and .
-        count_slash = url.count('/') if '#' not in url else url.count('/') - url.count('#')
+        count_slash = (url.count('/') 
+            if '#/' not in url  and './' not in url and '!/' not in url
+            else url.count('/') - url.count('#/') - url.count('./') - url.count('!/'))
 
         if url.endswith('.md') or url.endswith('.txt'): 
             result.append(url) # add url to result
@@ -46,7 +47,7 @@ def req_headless_browser(url, cookie = None, proxy = None, depth:int = 1):
         if count_slash == depth_to_crawl:
             # add everything in queue to result
             result.extend(queue)
-            break
+            break # stop crawling
 
         print_get_request(url)
         driver.refresh()
@@ -85,6 +86,7 @@ def req_headless_browser(url, cookie = None, proxy = None, depth:int = 1):
 
 
 def req_python_request(url, cookie= None, proxy = None):
+    list_of_accept_header = [""]
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
