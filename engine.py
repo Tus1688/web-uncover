@@ -2,18 +2,27 @@ import random
 import sys
 
 import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+from urllib3.exceptions import InsecureRequestWarning
 
-from ui import *
 from browser import custom_profile
+from ui import *
+
+# surpress ssl warning for urlib3
+requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+
 
 def engine(url, depth, threads, output, user_agent, proxy, cookie):
     try:
         print_info('Url is valid')
-        req_headless_browser(url=url, proxy=proxy, depth=int(depth))
-
+        inp = input('Do you want to use headless browser? (y/n) ')
+        if inp == 'y':
+            req_headless_browser(url=url,proxy=proxy, depth=int(depth))
+        else:
+            req_python_request(url=url, proxy=proxy, depth=int(depth))
     except Exception as e:
         print_error(str(e))
         sys.exit(1)
@@ -85,21 +94,89 @@ def req_headless_browser(url, cookie = None, proxy = None, depth:int = 1):
 
 
 
-def req_python_request(url, cookie= None, proxy = None):
-    list_of_accept_header = [""]
-    headers = {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate',
-        'User-Agent': getUserAgent(True)
-        }
-    destruct_proxy = {'http': f'http://{proxy}', 'https': f'https://{proxy}'} if proxy else {}
+def req_python_request(url, cookie= None, proxy = None, depth:int = 1):
+    list_of_accept_header = ["text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "*/*"]
+    result = [] # already crawled
+    queue = [] # get uri from previously crawled uri and will be used for next request
+    trash = [] # out of scope uri
+    depth_to_crawl = 3 + depth # depth of crawling
 
-    r = requests.get(url=url, headers=headers, proxies=destruct_proxy,verify=False)
-    # get cookies from response
-    initial_cookie = r.cookies.get_dict()
-    for cookie in initial_cookie:
-        print(cookie)
+    print_info(f'GET: {url} using python request')
+    queue.append(url if url.endswith('/') else url + '/')
+    comparer = url if url.endswith('/') else url + '/'
+
+    def request_local():
+        headers = {
+            'Accept': list_of_accept_header[random.randint(0, len(list_of_accept_header) - 1)],
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'User-Agent': getUserAgent(True)
+            }
+        destruct_proxy = {'http': f'http://{proxy}', 'https': f'https://{proxy}'} if proxy else {}
+
+        print_get_request(url)
+
+        r = requests.get(url=url, headers=headers, proxies=destruct_proxy,verify=False)
+
+        result.append(url) # add url to result
+
+        soup = BeautifulSoup(r.text, 'html.parser')
+        elements = soup.find_all('a')
+        
+        for e in elements:
+            temp = e.get('href')
+            if (temp is not None): 
+                if 'redirect?to=' in temp:
+                    temp = temp.split('redirect?to=')[1]
+
+                if ("http://" not in temp and "https://" not in temp):
+                    temp = comparer + temp
+
+                if (temp[0:len(comparer)] == comparer): # in scope base url
+                    if (temp not in result and temp not in queue):
+                        queue.append(temp)
+                        print_result_inscope(temp)
+                else: # out of scope
+                    if temp not in result and temp not in queue:
+                        if temp not in trash:
+                            trash.append(temp)
+                            print_result_outscope(temp)
+
+    while queue:
+        url = queue.pop(0)
+        count_slash = (url.count('/') 
+            if '#/' not in url  and './' not in url and '!/' not in url
+            else url.count('/') - url.count('#/') - url.count('./') - url.count('!/'))
+
+        if url.endswith('.md') or url.endswith('.txt'): 
+            result.append(url) # add url to result
+            continue
+
+        if count_slash == depth_to_crawl:
+            # add everything in queue to result
+            result.extend(queue)
+            break # stop crawling
+        
+        request_local()
+
+    # count result if 1
+    if len(result) == 1:
+        print_info("It's seems that there is no link in this page, or you can try to use headless browser")
+        sys.exit(1)
+    print_info('Done\n')
+
+    for i in result:
+        print_result_inscope(i)
+        if "ajax" in i or "AJAX" in i or "javascript:" in i:
+            print_info("AJAX is needed for this link ^^ to get a better result, you can try to combined it using headless browser")
+    print('\n')
+    for i in trash:
+        print_result_outscope(i)
+    
+    
+            
+    
+
 
 def getUserAgent(value:bool = False) -> str:
     if value:
