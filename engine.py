@@ -112,7 +112,7 @@ def req_python_request(url, cookie= None, proxy = None, depth:int = 1):
             'Accept-Encoding': 'gzip, deflate',
             'User-Agent': getUserAgent(True)
             }
-        destruct_proxy = {'http': f'http://{proxy}', 'https': f'https://{proxy}'} if proxy else {}
+        destruct_proxy = {'http': f'http://{proxy}', 'https': f'http://{proxy}'} if proxy else {}
 
         print_get_request(url)
 
