@@ -9,6 +9,7 @@ from selenium.webdriver.firefox.options import Options
 from urllib3.exceptions import InsecureRequestWarning
 
 from browser import custom_profile
+from outfile import write_to_file
 from ui import *
 
 # surpress ssl warning for urlib3
@@ -20,9 +21,13 @@ def engine(url, depth, threads, output, user_agent, proxy, cookie):
         print_info('Url is valid')
         inp = input('Do you want to use headless browser? (y/n) ')
         if inp == 'y':
-            req_headless_browser(url=url,proxy=proxy, depth=int(depth))
+            result = req_headless_browser(url=url,proxy=proxy, depth=int(depth))
+            if output:
+                write_to_file(result, output)
         else:
-            req_python_request(url=url, proxy=proxy, depth=int(depth))
+            result = req_python_request(url=url, proxy=proxy, depth=int(depth))
+            if output:
+                write_to_file(result, output)
     except Exception as e:
         print_error(str(e))
         sys.exit(1)
@@ -91,6 +96,8 @@ def req_headless_browser(url, cookie = None, proxy = None, depth:int = 1):
     print('\n')
     for i in trash:
         print_result_outscope(i)
+    
+    return result
 
 
 
@@ -173,6 +180,8 @@ def req_python_request(url, cookie= None, proxy = None, depth:int = 1):
     for i in trash:
         print_result_outscope(i)
     
+    return result
+    
     
             
     
@@ -180,7 +189,7 @@ def req_python_request(url, cookie= None, proxy = None, depth:int = 1):
 
 def getUserAgent(value:bool = False) -> str:
     if value:
-        # user agent from user-agents.txt file and ignore line starting with #
+        # with open user-agents.txt in current directory
         with open('user-agents.txt', 'r') as f:
             user_agents = [line.strip() for line in f if not line.startswith('#')]
             random_user_agent = random.choice(user_agents)
