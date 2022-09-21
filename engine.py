@@ -25,7 +25,7 @@ def engine(url, depth, threads, output, user_agent, proxy, cookie):
             if output:
                 write_to_file(result, output)
         else:
-            result = req_python_request(url=url, proxy=proxy, depth=int(depth))
+            result = req_python_request(url=url, proxy=proxy, depth=int(depth), user_agent=user_agent)
             if output:
                 write_to_file(result, output)
     except Exception as e:
@@ -101,7 +101,7 @@ def req_headless_browser(url, cookie = None, proxy = None, depth:int = 1):
 
 
 
-def req_python_request(url, cookie= None, proxy = None, depth:int = 1):
+def req_python_request(url, cookie= None, proxy = None, depth:int = 1, user_agent:str = None):
     list_of_accept_header = ["text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "*/*"]
     result = [] # already crawled
     queue = [] # get uri from previously crawled uri and will be used for next request
@@ -117,7 +117,7 @@ def req_python_request(url, cookie= None, proxy = None, depth:int = 1):
             'Accept': list_of_accept_header[random.randint(0, len(list_of_accept_header) - 1)],
             'Accept-Language': 'en-US,en;q=0.5',
             'Accept-Encoding': 'gzip, deflate',
-            'User-Agent': getUserAgent(True)
+            'User-Agent': user_agent if user_agent is not None else getUserAgent(True),
             }
         destruct_proxy = {'http': f'http://{proxy}', 'https': f'http://{proxy}'} if proxy else {}
 
